@@ -108,8 +108,6 @@ function closeSettingsModal(): void {
  *  - 'none': 处于底层的【普通对话页】，不工作
  */
 export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
-  console.log('[DSH-Back] triggerMobileBack called')
-
   // =========================================================================
   // 1. 检测【设置页 / 模态框】是否处于最上层
   // =========================================================================
@@ -122,19 +120,16 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
       'button[class*="crumb"], button[class*="back"], button[aria-label*="返回"], button[aria-label*="Back"], [class*="detailTop"] > button'
     )
     if (settingsSubBack && getComputedStyle(settingsSubBack).display !== 'none' && getComputedStyle(settingsSubBack).visibility !== 'hidden') {
-      console.log('[DSH-Back] matched: settings subpage back -> clicking back')
       settingsSubBack.click()
       return true
     }
 
-    console.log('[DSH-Back] matched: settings modal -> closing')
     closeSettingsModal()
     return true
   }
 
   const genericModal = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]')
   if (genericModal && getComputedStyle(genericModal).display !== 'none' && !genericModal.querySelector('[data-dsh-market-root]')) {
-    console.log('[DSH-Back] matched: generic modal -> closing')
     dispatchEscape()
     return true
   }
@@ -153,7 +148,6 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
   }
 
   if ((frame && !hasCollapsedAttr) || drawerVisible) {
-    console.log('[DSH-Back] matched: left drawer -> closing animated')
     closeLeftDrawerAnimated(ctx)
     return true
   }
@@ -167,13 +161,11 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
     const inViewport = rightPanel.getBoundingClientRect().left < window.innerWidth
     const isVisible = cs.display !== 'none' && cs.visibility !== 'hidden'
     if (isVisible && inViewport) {
-      console.log('[DSH-Back] matched: right sidebar panel -> closing animated')
       closeRightSidebarAnimated()
       return true
     }
   }
   if (frame?.hasAttribute('data-aionui-explorer-open')) {
-    console.log('[DSH-Back] matched: aionui explorer -> closing')
     frame.removeAttribute('data-aionui-explorer-open')
     return true
   }
@@ -190,7 +182,6 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
       '[data-dsh-market-portal] [role="dialog"], [data-dsh-market-root] [role="dialog"], [class*="confirmModal"], [class*="notesModal"], [role="dialog"]:has([class*="groupAddModal"])'
     )
     if (marketModal && getComputedStyle(marketModal).display !== 'none') {
-      console.log('[DSH-Back] matched: plugin market internal modal -> closing')
       const modalClose = marketModal.querySelector<HTMLElement>(
         'button[aria-label*="关闭"], button[aria-label*="Close"], button[class*="close"], button:has(svg)'
       )
@@ -207,12 +198,10 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
       'button[class*="back"], button[aria-label*="返回"], button[title*="返回"], [class*="detail"] button:has(svg)'
     )
     if (detailBackBtn && getComputedStyle(detailBackBtn).display !== 'none') {
-      console.log('[DSH-Back] matched: plugin market detail back -> clicking back')
       detailBackBtn.click()
       return true
     }
 
-    console.log('[DSH-Back] matched: plugin market home -> closing')
     const marketCloseBtn = marketRoot.querySelector<HTMLElement>('button:has(svg)')
     if (marketCloseBtn) {
       marketCloseBtn.click()
@@ -249,13 +238,11 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
     )
 
     if (subpageBackBtn && getComputedStyle(subpageBackBtn).display !== 'none' && getComputedStyle(subpageBackBtn).visibility !== 'hidden') {
-      console.log('[DSH-Back] matched: plugin subpage back button -> returning to plugin home')
       subpageBackBtn.click()
       return true
     }
 
     // 只有在确认没有二级返回按钮（确实处于插件列表主页）时，才退出整个插件面板返回会话
-    console.log('[DSH-Back] matched: plugin panel root -> exiting panel to conversation')
     if (ctx && typeof (ctx.layout as any)?.selectPanel === 'function') {
       ;(ctx.layout as any).selectPanel(null)
     } else {
@@ -272,7 +259,6 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
     || document.querySelector('[data-dsh-taskboard-board]') !== null
 
   if (isTaskboardActive) {
-    console.log('[DSH-Back] matched: taskboard active -> exiting')
     const taskboardExitBtn = document.querySelector<HTMLElement>(
       '[data-dsh-taskboard-board] button[class*="close"], [data-dsh-taskboard-board] button[class*="exit"], [data-mobile-nav="fab"]'
     )
@@ -287,7 +273,6 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
   // =========================================================================
   // 6. 处于底层的【普通对话页】
   // =========================================================================
-  console.log('[DSH-Back] conversation bottom view -> return none')
   return 'none'
 }
 
@@ -302,7 +287,6 @@ export function installMobileBackDispatcher(ctx: ClientContext): void {
   if (typeof window !== 'undefined') {
     ;(window as any).triggerMobileBack = boundTrigger
     ;(window as any).__dshTriggerMobileBack = boundTrigger
-    console.log('[DSH-Back] window.triggerMobileBack bound successfully')
   }
 
   // 2. 挂载到 ctx.effect 生命周期中进行卸载管理
