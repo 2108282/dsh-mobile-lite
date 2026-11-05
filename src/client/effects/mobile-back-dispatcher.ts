@@ -113,16 +113,26 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
   // =========================================================================
   // 1. 检测【设置页 / 模态框】是否处于最上层
   // =========================================================================
-  const settingsModal = document.querySelector(
+  const settingsModal = document.querySelector<HTMLElement>(
     '[data-shortcut-modal="settings"], [role="dialog"][data-shortcut-modal="settings"], [data-shortcut-modal="shortcuts"]'
   )
   if (settingsModal && getComputedStyle(settingsModal).display !== 'none') {
+    // 优先检测设置弹窗内部是否处于二级子页面（如具体插件的配置表单、面包屑返回）
+    const settingsSubBack = settingsModal.querySelector<HTMLElement>(
+      'button[class*="crumb"], button[class*="back"], button[aria-label*="返回"], button[aria-label*="Back"], [class*="detailTop"] > button'
+    )
+    if (settingsSubBack && getComputedStyle(settingsSubBack).display !== 'none' && getComputedStyle(settingsSubBack).visibility !== 'hidden') {
+      console.log('[DSH-Back] matched: settings subpage back -> clicking back')
+      settingsSubBack.click()
+      return true
+    }
+
     console.log('[DSH-Back] matched: settings modal -> closing')
     closeSettingsModal()
     return true
   }
 
-  const genericModal = document.querySelector('[role="dialog"][aria-modal="true"]')
+  const genericModal = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]')
   if (genericModal && getComputedStyle(genericModal).display !== 'none' && !genericModal.querySelector('[data-dsh-market-root]')) {
     console.log('[DSH-Back] matched: generic modal -> closing')
     dispatchEscape()
@@ -151,7 +161,7 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
   // =========================================================================
   // 3. 检测【右侧文件栏】是否处于最上层
   // =========================================================================
-  const rightPanel = document.querySelector('[data-sidebar-right-panel]')
+  const rightPanel = document.querySelector<HTMLElement>('[data-sidebar-right-panel]')
   if (rightPanel) {
     const cs = getComputedStyle(rightPanel)
     const inViewport = rightPanel.getBoundingClientRect().left < window.innerWidth
@@ -169,15 +179,35 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
   }
 
   // =========================================================================
-  // 4. 检测【插件市场】是否处于最上层
+  // 4. 检测【插件市场 / 插件管理 / 全局主面板】是否处于最上层
   // =========================================================================
+  
+  // 4.1 独立弹层型插件市场 (dsh-market)
   const marketRoot = document.querySelector<HTMLElement>('[data-dsh-market-root]')
   if (marketRoot && getComputedStyle(marketRoot).display !== 'none') {
+    // 检查市场内部是否有打开的模态子弹层 (如评论、更新日志、确认弹窗)
+    const marketModal = document.querySelector<HTMLElement>(
+      '[data-dsh-market-portal] [role="dialog"], [data-dsh-market-root] [role="dialog"], [class*="confirmModal"], [class*="notesModal"], [role="dialog"]:has([class*="groupAddModal"])'
+    )
+    if (marketModal && getComputedStyle(marketModal).display !== 'none') {
+      console.log('[DSH-Back] matched: plugin market internal modal -> closing')
+      const modalClose = marketModal.querySelector<HTMLElement>(
+        'button[aria-label*="关闭"], button[aria-label*="Close"], button[class*="close"], button:has(svg)'
+      )
+      if (modalClose) {
+        modalClose.click()
+      } else {
+        dispatchEscape()
+      }
+      return true
+    }
+
+    // 检查市场内部是否有二级返回按钮
     const detailBackBtn = marketRoot.querySelector<HTMLElement>(
       'button[class*="back"], button[aria-label*="返回"], button[title*="返回"], [class*="detail"] button:has(svg)'
     )
     if (detailBackBtn && getComputedStyle(detailBackBtn).display !== 'none') {
-      console.log('[DSH-Back] matched: plugin market detail back')
+      console.log('[DSH-Back] matched: plugin market detail back -> clicking back')
       detailBackBtn.click()
       return true
     }
@@ -192,13 +222,45 @@ export function triggerMobileBack(ctx?: ClientContext): true | 'none' {
     return true
   }
 
-  const activePanelRow = document.querySelector<HTMLElement>('[class*="panelRow"][aria-current="page"]')
-  if (activePanelRow) {
-    console.log('[DSH-Back] matched: active panel row -> exiting panel')
+  // 4.2 插件管理器面板（包含官方 [data-plugin-panel] 及侧边栏激活的全局面板）
+  const pluginPanel = document.querySelector<HTMLElement>('section[data-plugin-panel], [data-plugin-panel]')
+  const hasGlobalPanel = document.querySelector<HTMLElement>('[class*="panelRow"][aria-current="page"]') !== null
+    || document.querySelector<HTMLElement>('[data-global-panel]') !== null
+
+  if (pluginPanel || hasGlobalPanel) {
+    // 【关键修复点】：优先检测是否处于插件的二级/下级页面！
+    // 
+    // 下级页面判定特征：
+    // a) 官方插件详情页 (BundleDetail / ItemDetail / RowDetail)：[data-plugin-detail]、[data-plugin-item-detail]、[data-plugin-row-detail]
+    // b) 更多实验性插件页：header[class*="moreHead"]
+    // c) 面包屑返回按钮：button[class*="crumb"]、button[class*="moreBack"]、[class*="detailTop"] > button
+    // d) 带明确返回文案或无障碍标签的按钮
+    const subpageBackBtn = document.querySelector<HTMLElement>(
+      // 官方插件详情面包屑按钮 (DetailTop 的 .crumb 按钮)
+      '[data-plugin-panel] button[class*="crumb"], [data-plugin-detail] [class*="crumb"], [data-plugin-item-detail] [class*="crumb"], [data-plugin-row-detail] [class*="crumb"], [class*="detailTop"] > button, ' +
+      // 更多实验性插件列表顶部的返回按钮
+      '[data-plugin-panel] button[class*="moreBack"], header[class*="moreHead"] button, ' +
+      // 带明确返回文案或无障碍标签的按钮
+      '[data-plugin-panel] button[aria-label*="返回"], [data-plugin-panel] button[aria-label*="Back"], [data-plugin-panel] button[title*="返回"], ' +
+      // 全局主面板通用子级返回按钮
+      '[data-global-panel] [class*="crumb"], [data-global-panel] button[class*="back"], [data-global-panel] button[aria-label*="返回"], [data-global-panel] button[aria-label*="Back"], ' +
+      // Git 等第三方面板子级关闭/返回
+      '[class*="dsgDetailMask"] [class*="dsgDetailClose"], [class*="dsgDetailClose"]'
+    )
+
+    if (subpageBackBtn && getComputedStyle(subpageBackBtn).display !== 'none' && getComputedStyle(subpageBackBtn).visibility !== 'hidden') {
+      console.log('[DSH-Back] matched: plugin subpage back button -> returning to plugin home')
+      subpageBackBtn.click()
+      return true
+    }
+
+    // 只有在确认没有二级返回按钮（确实处于插件列表主页）时，才退出整个插件面板返回会话
+    console.log('[DSH-Back] matched: plugin panel root -> exiting panel to conversation')
     if (ctx && typeof (ctx.layout as any)?.selectPanel === 'function') {
       ;(ctx.layout as any).selectPanel(null)
     } else {
-      activePanelRow.click()
+      const activePanelRow = document.querySelector<HTMLElement>('[class*="panelRow"][aria-current="page"]')
+      activePanelRow?.click()
     }
     return true
   }
