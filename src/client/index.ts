@@ -4,6 +4,7 @@ import { createStatsLineTask } from './effects/stats-line.ts'
 import { installSidebarSwipe } from './effects/sidebar-swipe.ts'
 import { openFilesPanel } from './components/open-files-panel.ts'
 import { COMPOSER_AND_STATS_CSS } from './styles/styles.ts'
+import { installMobileBackDispatcher } from './effects/mobile-back-dispatcher.ts'
 
 /** 声明 Cordis 客户端服务依赖（侧边栏开关需要调用 ctx.layout.toggleSidebar） */
 export const inject = ['layout']
@@ -12,7 +13,8 @@ export const inject = ['layout']
  * 移动端轻量功能总装入口：
  * 1. 注入输入框紧凑化与用量环浮层 CSS；
  * 2. 挂载 stats-line 动态计算与局部 MutationObserver 调度任务；
- * 3. 挂载左滑/右滑调出侧边栏的双向手势引擎。
+ * 3. 挂载左滑/右滑调出侧边栏的双向手势引擎；
+ * 4. 挂载全面屏侧滑返回分发中枢 (triggerMobileBack，无门控直绑全局)。
  */
 export function apply(ctx: ClientContext): void {
   // 1. 挂载紧凑化与用量环样式表
@@ -41,4 +43,9 @@ export function apply(ctx: ClientContext): void {
 
   // 3. 挂载功能 2：左右两侧侧边栏滑动手势 (Sidebar & Files Swipe)
   installSidebarSwipe(ctx, () => openFilesPanel())
+
+  // 4. 挂载功能 3：全面屏侧滑返回分发中枢 (triggerMobileBack)
+  installMobileBackDispatcher(ctx)
 }
+
+export { triggerMobileBack } from './effects/mobile-back-dispatcher.ts'
