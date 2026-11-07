@@ -1,4 +1,5 @@
 import type { ReconcilerTask } from '../core/reconciler-core.ts'
+import { ensureFrameMarker, isMobileViewport } from './phone-chrome.ts'
 
 // The official conversation status row (turns / steps / LLM time / TTFT /
 // cache) has a hashed class, so the stylesheet cannot target it directly.
@@ -106,6 +107,7 @@ export function createStatsLineTask(): ReconcilerTask {
   // 保持上下文用量环在底部 Dock 与会话统计、Token 用量同排流式排布。
   // 不再将其悬浮外移至输入框工具栏，解除绝对定位与文字隐藏。
   const markRing = (statsOrDock?: Element | null): void => {
+    if (!isMobileViewport()) return
     let dock: Element | null = null
     if (statsOrDock !== null && statsOrDock !== undefined) {
       if (statsOrDock.matches?.('[data-composer-dock], [class*="_dock"]')) {
@@ -154,6 +156,7 @@ export function createStatsLineTask(): ReconcilerTask {
 
   // 精简与规整统计胶囊文本：隐藏 · 分隔符后确保段落之间有正常空格，并将 "缓存命中" 精简为 "命中"
   const compactStatsText = (): void => {
+    if (!isMobileViewport()) return
     const stack = document.querySelector('[class*="_composerStack"]')
     if (stack === null) return
     for (const statKey of ['activity', 'usage']) {
@@ -234,6 +237,7 @@ export function createStatsLineTask(): ReconcilerTask {
   // cost: while the anchor is alive this is one querySelector plus two
   // ancestor walks, ~3x/sec.
   const reanchor = (): void => {
+    ensureFrameMarker()
     markRing()
     compactStatsText()
     const anchor = document.querySelector('[data-mobile-nav="stats"]')
@@ -241,6 +245,7 @@ export function createStatsLineTask(): ReconcilerTask {
     mark()
   }
   const mark = (): void => {
+    ensureFrameMarker()
     // Keyboard open/close and viewport rotations relayout the composer without
     // any DOM mutation, so the overlays need their own re-layout channel.
     if (viewportHandler === null) {
