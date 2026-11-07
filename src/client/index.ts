@@ -2,7 +2,7 @@ import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import { installMobileEffect } from './effects/phone-chrome.ts'
 import { createStatsLineTask } from './effects/stats-line.ts'
 import { installSidebarSwipe } from './effects/sidebar-swipe.ts'
-import { installFileTrigger } from './effects/file-trigger.ts'
+import { installFileUpload } from './effects/file-upload.ts'
 import { openFilesPanel } from './components/open-files-panel.ts'
 import { COMPOSER_AND_STATS_CSS } from './styles/styles.ts'
 
@@ -33,5 +33,5 @@ export function apply(ctx: ClientContext): void {
 
   installSidebarSwipe(ctx, () => openFilesPanel())
   
-  installFileTrigger()
+  installFileUpload(ctx)
 }
