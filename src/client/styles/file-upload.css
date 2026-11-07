@@ -1,44 +1,49 @@
-/* 独立的文件上传按钮样式契约 */
-[data-composer-card] [data-mobile-nav="file-upload"] {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  min-height: 28px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: var(--dsw-radius-sm, 6px) !important;
-  background: transparent !important;
-  color: var(--dsw-alias-label-secondary, currentColor) !important;
-  cursor: pointer !important;
-  flex: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
+/* ==========================================================================
+   dsh-web-mobile: 文件上传触发按钮（仅限移动端）
+   ========================================================================== */
 
-[data-composer-card] [data-mobile-nav="file-upload"]:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, .06)) !important;
-}
+@media (max-width: 1023px) and (pointer: coarse) {
+  [data-composer-card] [data-mobile-nav="file-upload"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: var(--dsw-radius-sm, 6px) !important;
+    background: transparent !important;
+    color: var(--dsw-alias-label-secondary, currentColor) !important;
+    cursor: pointer !important;
+    flex: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
 
-[data-composer-card] [data-mobile-nav="file-upload"]:active {
-  background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, .12)) !important;
-}
+  [data-composer-card] [data-mobile-nav="file-upload"]:hover {
+    background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, .06)) !important;
+  }
 
-[data-composer-card] [data-mobile-nav="file-upload"] svg {
-  width: 14px !important;
-  height: 14px !important;
-  display: block !important;
-  flex: none !important;
-  stroke: currentColor !important;
-}
+  [data-composer-card] [data-mobile-nav="file-upload"]:active {
+    background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, .12)) !important;
+  }
 
-[data-composer-card] [data-mobile-nav="file-upload"]:disabled {
-  opacity: 0.38;
-  cursor: default;
-}
+  [data-composer-card] [data-mobile-nav="file-upload"] svg {
+    width: 14px !important;
+    height: 14px !important;
+    display: block !important;
+    flex: none !important;
+    stroke: currentColor !important;
+  }
 
-[data-composer-card]:not(:has(input[type=file])) [data-mobile-nav="file-upload"] {
-  display: none !important;
+  [data-composer-card] [data-mobile-nav="file-upload"]:disabled {
+    opacity: 0.38;
+    cursor: default;
+  }
+
+  [data-composer-card]:not(:has(input[type=file])) [data-mobile-nav="file-upload"] {
+    display: none !important;
+  }
 }

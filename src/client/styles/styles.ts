@@ -6,6 +6,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
    ========================================================================== */
 
 @media (max-width: 1023px) and (pointer: coarse) {
+  /* 1. 活跃会话下的输入框紧凑化 */
   [data-phase="active"] [data-composer-card] {
     padding-top: 2px !important;
     gap: 4px !important;
@@ -19,6 +20,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     padding-top: 2px !important;
   }
 
+  /* 2. 底部 Dock 容器单排紧凑化排布 */
   [data-composer-dock],
   [class*="_dock"] {
     gap: 4px !important;
@@ -29,6 +31,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     display: contents !important;
   }
 
+  /* 3. 统计胶囊排版：Activity 与 Usage */
   [data-composer-stat="activity"],
   [data-composer-stat="usage"],
   [data-mobile-nav="stats-ring"] {
@@ -56,6 +59,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     white-space: nowrap !important;
   }
 
+  /* 统一胶囊内部按钮 */
   [data-composer-stat] button,
   [data-mobile-nav="stats-ring"] button {
     box-sizing: border-box !important;
@@ -70,6 +74,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     vertical-align: middle !important;
   }
 
+  /* 统一胶囊内部 SVG */
   [data-composer-stat] svg,
   [data-mobile-nav="stats-ring"] svg {
     flex: 0 0 auto !important;
@@ -80,6 +85,7 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     vertical-align: middle !important;
   }
 
+  /* 统一胶囊内部文本 */
   [data-composer-stat] [class*="_label"],
   [data-composer-stat] button > span,
   [data-mobile-nav="stats-ring"] span {
@@ -105,6 +111,51 @@ export const COMPOSER_AND_STATS_CSS = `/* ======================================
     background: transparent !important;
     box-shadow: none !important;
     border: 0 !important;
+  }
+
+  /* 4. 文件上传触发按钮 */
+  [data-composer-card] [data-mobile-nav="file-upload"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: var(--dsw-radius-sm, 6px) !important;
+    background: transparent !important;
+    color: var(--dsw-alias-label-secondary, currentColor) !important;
+    cursor: pointer !important;
+    flex: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  [data-composer-card] [data-mobile-nav="file-upload"]:hover {
+    background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, .06)) !important;
+  }
+
+  [data-composer-card] [data-mobile-nav="file-upload"]:active {
+    background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, .12)) !important;
+  }
+
+  [data-composer-card] [data-mobile-nav="file-upload"] svg {
+    width: 14px !important;
+    height: 14px !important;
+    display: block !important;
+    flex: none !important;
+    stroke: currentColor !important;
+  }
+
+  [data-composer-card] [data-mobile-nav="file-upload"]:disabled {
+    opacity: 0.38;
+    cursor: default;
+  }
+
+  [data-composer-card]:not(:has(input[type=file])) [data-mobile-nav="file-upload"] {
+    display: none !important;
   }
 }
 `
