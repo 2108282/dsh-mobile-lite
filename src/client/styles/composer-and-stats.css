@@ -16,7 +16,50 @@
   padding-top: 2px !important;
 }
 
-/* 2. 底部 Dock 容器单排紧凑化排布 */
+/* 2. 工具栏按钮间距紧凑化（对齐加号、权限与文件按钮，消除过大空隙） */
+[data-mobile-nav="frame"] [data-phase="active"] [data-composer-card] [class*="_tools"],
+[data-mobile-nav="frame"] [data-phase="active"] [data-composer-card] [class*="_modes"] {
+  gap: 4px !important;
+}
+
+/* 3. 文件上传触发按钮：严格对齐权限按钮风格（var(--dsw-radius-sm, 6px) 圆角、高度 28px、彻底无边框） */
+[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: var(--dsw-radius-sm, 6px) !important;
+  background: transparent !important;
+  color: var(--dsw-alias-label-secondary, currentColor) !important;
+  cursor: pointer !important;
+  flex: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+@media (hover: hover) {
+  [data-mobile-nav="frame"] [data-mobile-nav="file-trigger"]:hover {
+    background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, .06)) !important;
+  }
+}
+[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"]:active {
+  background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, .12)) !important;
+}
+[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"] svg {
+  width: 14px !important;
+  height: 14px !important;
+  display: block !important;
+  flex: none !important;
+  stroke: currentColor !important;
+}
+
+/* 4. 底部 Dock 容器单排紧凑化排布 */
 [data-mobile-nav="frame"] [data-composer-dock],
 [data-mobile-nav="frame"] [class*="_dock"] {
   gap: 4px !important;
@@ -27,7 +70,7 @@
   display: contents !important;
 }
 
-/* 3. 统计胶囊排版：Activity 与 Usage */
+/* 5. 统计胶囊排版：Activity 与 Usage */
 [data-mobile-nav="frame"] [data-composer-stat="activity"],
 [data-mobile-nav="frame"] [data-composer-stat="usage"],
 [data-mobile-nav="frame"] [data-mobile-nav="stats-ring"] {
@@ -35,28 +78,6 @@
   display: inline-flex !important;
   align-items: center !important;
   vertical-align: middle !important;
-}
-
-/* 4. 文件上传触发按钮（原生化适配） */
-[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"] {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 28px !important;
-  height: 28px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  color: var(--dsw-alias-label-secondary, currentColor) !important;
-  cursor: pointer;
-}
-[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"]:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, .06)) !important;
-}
-[data-mobile-nav="frame"] [data-mobile-nav="file-trigger"] svg {
-  width: 16px !important;
-  height: 16px !important;
 }
 
 [data-mobile-nav="frame"] [data-composer-stat="activity"] {
@@ -116,12 +137,12 @@
   text-overflow: ellipsis !important;
 }
 
-/* 4. 彻底隐藏移动端的 · 分隔符 */
+/* 6. 彻底隐藏移动端的 · 分隔符 */
 [data-mobile-nav="frame"] [data-composer-stat] [class*="_sep"] {
   display: none !important;
 }
 
-/* 5. 上下文用量环：静态流式排布 */
+/* 7. 上下文用量环：静态流式排布 */
 [data-mobile-nav="frame"] [data-mobile-nav="stats-ring"] {
   position: static !important;
   flex: 0 0 auto !important;
