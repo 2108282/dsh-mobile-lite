@@ -1,6 +1,6 @@
 {
   "name": "dsh-mobile-lite",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "极简轻量版 DSH 移动端适配插件：输入框/性能用量优化 + 左右侧边栏滑动手势",
   "type": "module",
   "main": "lib/index.js",
@@ -20,10 +20,16 @@
     "lib",
     "src",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "patches/README.md",
+    "patches/reconnect-display.mjs",
+    "patches/test-reconnect.mjs"
   ],
   "scripts": {
-    "build": "node /usr/local/lib/node_modules/typescript/bin/tsc -p tsconfig.json && node /usr/local/lib/node_modules/typescript/bin/tsc -p tsconfig.client.json && node scripts/build-client.mjs"
+    "build": "node /usr/local/lib/node_modules/typescript/bin/tsc -p tsconfig.json && node /usr/local/lib/node_modules/typescript/bin/tsc -p tsconfig.client.json && node scripts/build-client.mjs",
+    "test:reconnect": "node patches/test-reconnect.mjs",
+    "patch:reconnect": "node patches/reconnect-display.mjs",
+    "patch:reconnect:apply": "node patches/reconnect-display.mjs --apply"
   },
   "dsh": {
     "bundle": {
