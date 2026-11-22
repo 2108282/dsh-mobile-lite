@@ -3,6 +3,7 @@ import { installMobileEffect } from './effects/phone-chrome.ts'
 import { createStatsLineTask } from './effects/stats-line.ts'
 import { installSidebarSwipe } from './effects/sidebar-swipe.ts'
 import { installFileUpload } from './effects/file-upload.ts'
+import { installTextWidth } from './effects/text-width.ts'
 import { openFilesPanel } from './components/open-files-panel.ts'
 import { COMPOSER_AND_STATS_CSS } from './styles/styles.ts'
 
@@ -23,6 +24,8 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'dsh-mobile-lite: inject styles')
 
+  installTextWidth(ctx)
+
   installMobileEffect(ctx, 'dsh-mobile-lite: stats-line task', () => {
     const statsTask = createStatsLineTask()
     statsTask.ensure()
@@ -32,6 +35,5 @@ export function apply(ctx: ClientContext): void {
   })
 
   installSidebarSwipe(ctx, () => openFilesPanel())
-  
   installFileUpload(ctx)
 }
