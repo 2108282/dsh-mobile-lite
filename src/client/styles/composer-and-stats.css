@@ -17,72 +17,104 @@
     padding-top: 2px !important;
   }
 
-  /* 2. 底部 Dock 容器单排紧凑化排布 */
-  [data-composer-dock],
-  [class*="_dock"] {
+  /* 2. 固定统计行：三项统计同排，扩展项按 DOM 顺序独占后续行。
+     两侧弹性空轨只负责居中；中间三轨为 Activity / Usage / ContextMeter。
+     整张网格仍占满 Dock，扩展项才能真正全宽，不挪动任何 React 节点。 */
+  [data-composer-dock][data-mobile-stats-grid] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) max-content minmax(0, max-content) max-content minmax(0, 1fr) !important;
+    grid-auto-flow: row !important;
     gap: 4px !important;
-    justify-content: center !important;
     align-items: center !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    min-width: 0 !important;
   }
-  [data-slot="conversation.composer.dock"] {
+  [data-composer-dock][data-mobile-stats-grid] > [data-slot="conversation.composer.dock"] {
     display: contents !important;
+  }
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-dock-item] {
+    order: 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+  }
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-dock-item="activity"] {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-dock-item="usage"] {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-dock-item="ring"] {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+  }
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-dock-item="extension"] {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    justify-self: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    /* 只清扩展布局根的 auto margin，保留其内部控件和弹窗布局。 */
+    margin-inline: 0 !important;
   }
 
   /* 3. 统计胶囊排版：Activity (轮次/步数/TPS) 与 Usage (Token/缓存命中) */
-  [data-composer-stat="activity"] {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] {
     flex: 0 0 auto !important;
     width: max-content !important;
     min-width: max-content !important;
-    max-width: 50% !important;
+    max-width: none !important;
     font-size: 10.5px !important;
     line-height: 18px !important;
-    margin-right: 4px !important;
+    margin-right: 0 !important;
     white-space: nowrap !important;
   }
-  [data-composer-stat="activity"] button,
-  [data-composer-stat="activity"] span,
-  [data-composer-stat="activity"] svg {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] button,
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] span,
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] svg {
     font-size: 10.5px !important;
   }
-  [data-composer-stat="activity"] button {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] button {
     padding: 1px 5px !important;
     gap: 4px !important;
   }
-  [data-composer-stat="activity"] svg {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="activity"] svg {
     width: 13px !important;
     height: 13px !important;
     flex: 0 0 auto !important;
   }
 
-  [data-composer-stat="usage"] {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] {
     flex: 0 1 auto !important;
     min-width: 0 !important;
-    max-width: 45% !important;
+    max-width: 100% !important;
     font-size: 10.5px !important;
     line-height: 18px !important;
-    margin-right: 4px !important;
+    margin-right: 0 !important;
     overflow: hidden !important;
     white-space: nowrap !important;
   }
-  [data-composer-stat="usage"] button,
-  [data-composer-stat="usage"] span,
-  [data-composer-stat="usage"] svg {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] button,
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] span,
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] svg {
     font-size: 10.5px !important;
   }
-  [data-composer-stat="usage"] button {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] button {
     padding: 1px 5px !important;
     gap: 4px !important;
     min-width: 0 !important;
     max-width: 100% !important;
     overflow: hidden !important;
   }
-  [data-composer-stat="usage"] svg {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] svg {
     width: 13px !important;
     height: 13px !important;
     flex: 0 0 auto !important;
   }
-  [data-composer-stat="usage"] [class*="_label"],
-  [data-composer-stat="usage"] button > span {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] [class*="_label"],
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat="usage"] button > span {
     flex: 0 1 auto !important;
     min-width: 0 !important;
     overflow: hidden !important;
@@ -91,17 +123,19 @@
   }
 
   /* 4. 彻底隐藏移动端的 · 分隔符 */
-  [data-composer-stat] [class*="_sep"] {
+  [data-composer-dock][data-mobile-stats-grid] [data-composer-stat] [class*="_sep"] {
     display: none !important;
   }
 
-  /* 5. 上下文用量环：同排流式紧凑排布（保留 10.5px 文本与 13px 圆环） */
-  [data-mobile-nav="stats-ring"] {
+  /* 5. 上下文用量环：固定首行，保留百分比，宽度不收缩（保留 10.5px 文本与 13px 圆环） */
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-nav="stats-ring"] {
     position: static !important;
     flex: 0 0 auto !important;
     display: inline-flex !important;
     align-items: center !important;
-    min-width: 0 !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
     margin: 0 !important;
     padding: 0 !important;
     background: transparent !important;
@@ -110,18 +144,18 @@
     font-size: 10.5px !important;
     line-height: 18px !important;
   }
-  [data-mobile-nav="stats-ring"] button,
-  [data-mobile-nav="stats-ring"] span {
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-nav="stats-ring"] button,
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-nav="stats-ring"] span {
     font-size: 10.5px !important;
     line-height: 18px !important;
   }
-  [data-mobile-nav="stats-ring"] button {
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-nav="stats-ring"] button {
     padding: 1px 5px !important;
     gap: 3px !important;
     min-width: 0 !important;
     width: auto !important;
   }
-  [data-mobile-nav="stats-ring"] svg {
+  [data-composer-dock][data-mobile-stats-grid] [data-mobile-nav="stats-ring"] svg {
     display: inline-block !important;
     width: 13px !important;
     height: 13px !important;

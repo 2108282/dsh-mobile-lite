@@ -28,12 +28,10 @@ export function createStatsLineTask(): ReconcilerTask {
   // calls parent.removeChild(child) against the parent it rendered the node
   // into, so a node this task moved makes that throw NotFoundError and the
   // SlotErrorBoundary blanks the whole composer slot until a reload. The
-  // offline-reconnect rebuild hits exactly this path. Both folded readouts
-  // (context ring, TPS text) therefore STAY where React rendered them; the
-  // visible slot is held by a plugin-owned placeholder element React does not
-  // track, and the host node is absolutely positioned on top of it.
-  // Coordinates refresh on every flush and on viewport resizes — the keyboard
-  // changes layout without any DOM mutation to wake the reconciler.
+  // offline-reconnect rebuild hits exactly this path. Modern dock items
+  // therefore stay in place and only receive grid markers. The legacy TPS
+  // readout still overlays a plugin-owned placeholder without moving nodes;
+  // its coordinates refresh on viewport resize (including the keyboard).
 
   // The overlay must resolve against a positioned ancestor. The host rarely
   // positions these containers, so mark the expected one (CSS sets
@@ -104,54 +102,62 @@ export function createStatsLineTask(): ReconcilerTask {
       return
     }
   }
-  // 保持上下文用量环在底部 Dock 与会话统计、Token 用量同排流式排布。
-  // 不再将其悬浮外移至输入框工具栏，解除绝对定位与文字隐藏。
-  const markRing = (statsOrDock?: Element | null): void => {
-    if (!isMobileViewport()) return
-    let dock: Element | null = null
-    if (statsOrDock !== null && statsOrDock !== undefined) {
-      if (statsOrDock.matches?.('[data-composer-dock], [class*="_dock"]')) {
-        dock = statsOrDock
-      } else {
-        const holder = statsOrDock.parentElement
-        dock = holder?.parentElement ?? holder
+  // Only annotate grid items; keep React's parent/child relationships intact.
+  // The host's list slot holds activity / usage / extensions. ContextMeter is
+  // a separate direct child AFTER that slot, never a descendant of an extension.
+  const dockMarkers = new Map<Element, string>()
+  const itemMarkers = new Map<Element, string>()
+  const ringMarkers = new Map<Element, string>()
+  const syncMarkers = (attribute: string, current: Map<Element, string>, next: Map<Element, string>): void => {
+    for (const [el, value] of current) {
+      if (!next.has(el) && el.getAttribute(attribute) === value) el.removeAttribute(attribute)
+    }
+    current.clear()
+    for (const [el, value] of next) {
+      if (el.getAttribute(attribute) !== value) el.setAttribute(attribute, value)
+      current.set(el, value)
+    }
+  }
+  const markDockLayout = (): boolean => {
+    const docks = new Map<Element, string>()
+    const items = new Map<Element, string>()
+    const rings = new Map<Element, string>()
+    const stack = document.querySelector('[class*="_composerStack"]')
+    if (isMobileViewport() && stack !== null) {
+      for (const dock of stack.querySelectorAll('[data-composer-dock]')) {
+        const slot = dock.querySelector(':scope > [data-slot="conversation.composer.dock"]')
+        if (slot === null) continue
+        docks.set(dock, '')
+        const markItem = (el: Element): void => {
+          // Transparent slot-entry wrappers generate no grid box. Do not
+          // descend into a contribution's own flex/grid layout or popover.
+          if (getComputedStyle(el).display === 'contents') {
+            for (const child of el.children) markItem(child)
+            return
+          }
+          const stat = el.getAttribute('data-composer-stat')
+          items.set(el, stat === 'activity' || stat === 'usage' ? stat : 'extension')
+        }
+        for (const child of slot.children) markItem(child)
+        for (const child of dock.children) {
+          if (child === slot) continue
+          // Match the host ContextMeter's exact structural seat and reading,
+          // not arbitrary circle/percent widgets anywhere under the composer.
+          const button = child.matches('span')
+            ? child.querySelector('button[aria-haspopup="dialog"]')
+            : null
+          const svg = button?.querySelector(':scope > svg[viewBox="0 0 14 14"]')
+          const isRing = svg?.querySelectorAll(':scope > circle').length === 2 &&
+            /^\d+(?:\.\d+)?%$/.test((button?.textContent ?? '').trim())
+          items.set(child, isRing ? 'ring' : 'extension')
+          if (isRing) rings.set(child, 'stats-ring')
+        }
       }
     }
-    if (dock === null) {
-      dock = document.querySelector('[data-composer-dock], [class*="_dock"]')
-    }
-    if (dock === null) return
-
-    // 清理历史可能残留的占位节点
-    for (const stale of document.querySelectorAll('[data-mobile-nav="stats-ring-reserve"]')) {
-      stale.remove()
-    }
-
-    // Search the composer dock for the real ContextMeter.
-    // 1. MUST NOT match dsh-api-dashboard (.dshadb_barwrap or [class*="dshadb_"]).
-    // 2. MUST contain an svg circle and percentage text (real context meter).
-    const pool = [...dock.children]
-    if (dock.parentElement !== null) pool.push(...dock.parentElement.children)
-    const ring = pool.find((child) => {
-      if (child.querySelector('textarea, [data-composer-input]') !== null) return false
-      if (
-        child.matches('[class*="dshadb_"], .dshadb_barwrap') ||
-        child.querySelector('[class*="dshadb_"]') !== null
-      ) {
-        return false
-      }
-      const hasCircle = child.querySelector('svg circle') !== null
-      const hasPercent = /\d\s*%/.test(child.textContent ?? '')
-      return hasCircle && hasPercent
-    })
-    if (ring === undefined) return
-    if (ring.getAttribute('data-mobile-nav') !== 'stats-ring') {
-      ring.setAttribute('data-mobile-nav', 'stats-ring')
-    }
-    const styled = ring as HTMLElement
-    if (styled.style.left) styled.style.left = ''
-    if (styled.style.top) styled.style.top = ''
-    if (styled.style.position) styled.style.position = ''
+    syncMarkers('data-mobile-stats-grid', dockMarkers, docks)
+    syncMarkers('data-mobile-dock-item', itemMarkers, items)
+    syncMarkers('data-mobile-nav', ringMarkers, rings)
+    return docks.size > 0
   }
 
   // 精简与规整统计胶囊文本：隐藏 · 分隔符后确保段落之间有正常空格，并将 "缓存命中" 精简为 "命中"
@@ -185,22 +191,12 @@ export function createStatsLineTask(): ReconcilerTask {
   }
 
   let viewportHandler: (() => void) | null = null
-  const relayout = (): void => {
-    const anchor = document.querySelector('[data-mobile-nav="stats"]')
-    if (anchor !== null) moveTps(anchor)
-    markRing()
-    compactStatsText()
-  }
-  // Wake-up channel. Upstream's reconciler observes documentElement with
-  // subtree:true and notes the '*' tree key on every mutation, so this task
-  // re-runs constantly. This fork deliberately made that observer lean
-  // (container attributes only, no subtree — streaming tokens never wake it),
-  // so stats-line owns a NARROWLY scoped observer on the composer stack
-  // instead. The message list lives outside the composer stack, so per-token
-  // appends never fire it; only composer-internal changes (the strip mounting,
-  // pill/TPS text updates) do. Self-healing: when the marked strip leaves the
-  // tree, the fast path fails, the dead path re-attaches to the current stack.
+  const relayout = (): void => mark()
+  // Observe only the composer stack, never the streaming message tree.
+  // Rebind when the stack changes, even when the modern dock has no legacy
+  // stats anchor (session switch, initial async mount, offline reconnect).
   let scopeObserver: MutationObserver | null = null
+  let observedStack: Element | null = null
   let rafId: number | null = null
   const SELF_SELECTOR =
     '[data-mobile-nav="stats-ring"], [data-mobile-nav="stats-tps"], [data-mobile-nav="stats-ring-reserve"], [data-mobile-nav="stats-tps-reserve"]'
@@ -213,12 +209,14 @@ export function createStatsLineTask(): ReconcilerTask {
   }
   const attachScope = (): void => {
     const stack = document.querySelector('[class*="_composerStack"]')
+    if (stack === observedStack) return
+    scopeObserver?.disconnect()
+    observedStack = stack
     if (stack === null) return
     if (scopeObserver === null) {
       scopeObserver = new MutationObserver((records) => {
-        // Ignore our own overlay/reserve mutations: placeOverlay writes style
-        // (not observed) and moveTps/moveRing write text/append placeholders,
-        // which would otherwise echo straight back into mark().
+        // Overlay/reserve writes must not echo back into mark(). Marker
+        // attributes are not observed, so the grid never wakes itself up.
         for (const record of records) {
           const el = record.target instanceof Element ? record.target : record.target.parentElement
           if (el !== null && el.closest(SELF_SELECTOR) !== null) continue
@@ -227,51 +225,35 @@ export function createStatsLineTask(): ReconcilerTask {
         }
       })
     }
-    scopeObserver.disconnect()
     scopeObserver.observe(stack, { childList: true, subtree: true, characterData: true })
   }
   let reanchorId: number | null = null
-  // The strip renders asynchronously (session projections resolve after the
-  // mobile effect installs), and the stack itself can remount on session
-  // switches. A cheap idle-speed re-anchor covers both without the subtree
-  // cost: while the anchor is alive this is one querySelector plus two
-  // ancestor walks, ~3x/sec.
-  const reanchor = (): void => {
-    ensureFrameMarker()
-    markRing()
-    compactStatsText()
-    const anchor = document.querySelector('[data-mobile-nav="stats"]')
-    if (anchor !== null && statsAnchorAlive(anchor)) return
-    mark()
-  }
+  // Keep the existing idle re-anchor for stack replacement; modern docks only
+  // visit their few layout items, without a legacy composer-wide root scan.
+  const reanchor = (): void => mark()
   const mark = (): void => {
+    if (!isMobileViewport()) return
     ensureFrameMarker()
     // Keyboard open/close and viewport rotations relayout the composer without
-    // any DOM mutation, so the overlays need their own re-layout channel.
+    // any DOM mutation, so legacy TPS overlays need a resize channel.
     if (viewportHandler === null) {
       viewportHandler = relayout
       window.addEventListener('resize', relayout)
       window.visualViewport?.addEventListener('resize', relayout)
     }
-    // 保持上下文用量环与统计胶囊在 dock 内就地紧凑渲染
-    markRing()
+    attachScope()
+    const hasDock = markDockLayout()
     compactStatsText()
+    if (hasDock) return
 
-    // Fast path: the marked strip usually survives React rebuilds between
-    // tokens; re-verifying the anchor is O(1) while the full-tree hunt below
-    // grows with the conversation. moveTps still re-runs so a rebuilt TPS
-    // readout is re-folded.
+    // Fast path for the legacy status strip. Modern dock pills must never be
+    // mistaken for that strip (nor should an extension mentioning steps).
     const anchor = document.querySelector('[data-mobile-nav="stats"]')
     if (anchor !== null && statsAnchorAlive(anchor)) {
       moveTps(anchor)
       return
     }
-    // Stale marker on a node that left the composer stack/phase context:
-    // drop it so the slow path can re-anchor cleanly.
     anchor?.removeAttribute('data-mobile-nav')
-    // The stack may have (re)mounted since activation — re-aim the scoped
-    // observer before hunting in it.
-    attachScope()
     // Scope decision: the status row is a DESCENDANT of the composer stack,
     // not necessarily its child. On rc.2 hosts it is a direct child (its own
     // `_root`); on 0.1.5 the composer card wrapper (uV2eYG_root) sits between
@@ -334,7 +316,7 @@ export function createStatsLineTask(): ReconcilerTask {
     },
     dispose: () => {
       // Hand the official layout back: drop every marker (the strip loses its
-      // one-line layout, ring/TPS overlays return to static flow) and remove
+      // one-line layout, the TPS overlay returns to static flow) and remove
       // the plugin-owned placeholders.
       if (viewportHandler !== null) {
         window.removeEventListener('resize', viewportHandler)
@@ -351,8 +333,12 @@ export function createStatsLineTask(): ReconcilerTask {
       }
       scopeObserver?.disconnect()
       scopeObserver = null
+      observedStack = null
       started = false
-      for (const el of document.querySelectorAll('[data-mobile-nav="stats-ring"], [data-mobile-nav="stats-tps"]')) {
+      syncMarkers('data-mobile-stats-grid', dockMarkers, new Map())
+      syncMarkers('data-mobile-dock-item', itemMarkers, new Map())
+      syncMarkers('data-mobile-nav', ringMarkers, new Map())
+      for (const el of document.querySelectorAll('[data-mobile-nav="stats-tps"]')) {
         const styled = el as HTMLElement
         styled.style.left = ''
         styled.style.top = ''
